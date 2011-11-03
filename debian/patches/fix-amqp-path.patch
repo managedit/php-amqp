@@ -1,0 +1,13 @@
+Index: php-amqp/config.m4
+===================================================================
+--- php-amqp.orig/config.m4	2011-11-03 04:24:00.020796718 +0000
++++ php-amqp/config.m4	2011-11-03 04:24:10.040797117 +0000
+@@ -18,7 +18,7 @@
+ 
+   dnl # --with-amqp -> check with-path
+   
+-         SEARCH_PATH="/usr/local"     # you might want to change this
++         SEARCH_PATH="/usr"     # you might want to change this
+ 
+   	 #SEARCH_FOR="/usr/local/include/amqp.h"  
+   	 #SEARCH_FOR="/usr/local/include/amqp_framing.h"  

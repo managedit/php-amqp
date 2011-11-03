@@ -1,0 +1,96 @@
+#!/usr/bin/make -f
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+DEB_HOST_GNU_TYPE    ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+SOURCE_VERSION        = $(shell dpkg-parsechangelog | grep ^Version | sed "s/Version: //")
+
+CFLAGS = -O2 -Wall -fno-strict-aliasing
+
+# Enable IEEE-conformant floating point math on alphas (not the default)
+ifeq (alpha-linux-gnu,$(DEB_HOST_GNU_TYPE))
+  CFLAGS += -mieee
+endif
+
+ifeq ($(DEB_HOST_GNU_TYPE), $(findstring $(DEB_HOST_GNU_TYPE), ia64-linux-gnu powerpc64-linux-gnu))
+  CFLAGS += -g
+else
+  CFLAGS += -gstabs
+endif
+
+build: build-php5-stamp
+build-php5-stamp: configure-php5-stamp
+	dh_testdir
+	# Add here commands to compile the package.
+	cd build-php5 && $(MAKE) CFLAGS="$(CFLAGS)"
+
+	touch build-php5-stamp
+
+configure: configure-php5-stamp
+configure-php5-stamp:
+	dh_testdir
+	rm -rf build-php5 && mkdir build-php5
+	cp *.m4 *.c *.h build-php5/
+	-cd build-php5 && phpize5
+	cd build-php5 && ./configure --build=$(DEB_BUILD_GNU_TYPE) --host=$(DEB_HOST_GNU_TYPE) \
+		--prefix=/usr \
+		--with-php-config=/usr/bin/php-config5 \
+		--disable-rpath \
+		--disable-static
+
+	touch configure-php5-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f configure-php5-stamp
+	rm -f build-php5-stamp
+	rm -f install-stamp
+
+	# Add here commands to clean up after the build process.
+	rm -rf build-php5
+
+	dh_clean
+
+install: DH_OPTIONS=
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	# Add here commands to install the package into debian/php5-amqp.
+	(ext=`/usr/bin/php-config5 --extension-dir`;mkdir -p debian/php5-amqp/$${ext};install -m 644 -o root -g root build-php5/modules/amqp.so debian/php5-amqp/$${ext}/amqp.so;)
+	mkdir -p debian/php5-amqp/etc/php5/conf.d
+	install -m 644 debian/amqp.ini debian/php5-amqp/etc/php5/conf.d/amqp.ini
+
+	touch install-stamp
+
+# Build architecture-independent files here.
+binary-indep:
+
+# Build architecture-dependent files here.
+binary-arch: DH_OPTIONS=
+binary-arch: build install
+	# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testdir
+	dh_testroot
+	dh_installdebconf
+	dh_installdocs
+
+	dh_installchangelogs
+	dh_strip
+	dh_link
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	echo "php:Depends=phpapi-`php-config5 --phpapi`" >> debian/php5-amqp.substvars
+
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-arch binary-indep
+.PHONY: build clean binary-indep binary-arch binary install configure

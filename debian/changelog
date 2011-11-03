@@ -1,0 +1,5 @@
+php-amqp (0.3.0-0mit1) oneiric; urgency=low
+
+  * Initial Packaging of 0.3.0
+
+ -- Kiall Mac Innes <kiall@managedit.ie>  Thu, 03 Nov 2011 04:21:35 +0000
